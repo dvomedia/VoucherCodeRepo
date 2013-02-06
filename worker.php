@@ -11,7 +11,7 @@ $wf = new Worker_Factory;
 
 // first param the exchange to connect to
 // second param is what queue to listen to
-$worker = $wf->create('voucher', 'datafeed');
+$worker = $wf->create('voucher', 'datafeed', AMQP_DURABLE);
 
 // listen & block for x times before ending
 $worker->run(5);

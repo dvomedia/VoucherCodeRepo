@@ -45,6 +45,12 @@ abstract class Worker
     protected $_exchangeName = 'default';
 
     /**
+     * @var string Name of the AMQP exchange
+     */
+    protected $_queueFlag = AMQP_NOPARAM;
+
+
+    /**
      * @var string the key of the amqp exhange
      */
     protected $_key = 'default';
@@ -56,9 +62,12 @@ abstract class Worker
         return $this->_processLimit;
     }
 
-    public function __construct($queueName)
+    public function __construct($queueName, $flag = null)
     {
         $this->_queueName = $queueName;
+        if (false === empty($flag)) {
+            $this->_queueFlag = $flag;
+        }
 
         $this->_connection = new AMQPConnection();
         $this->_connection->connect();
@@ -82,7 +91,7 @@ abstract class Worker
         // Open Queue and bind to exchange
         $this->_queue = new AMQPQueue($this->_channel);
         $this->_queue->setName($this->_queueName);
-        $this->_queue->setFlags(AMQP_DURABLE);
+        $this->_queue->setFlags($this->_queueFlag);
         $this->_queue->declare();
         $this->_queue->bind($this->_exchangeName, $this->_key);
     }

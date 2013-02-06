@@ -34,13 +34,14 @@ class Exchange
 		$this->_exchange->declare();
 
 		// Create Queues
-		foreach ($this->_getQueues() as $queueName) {
+		foreach ($this->_getQueues() as $queue) {
 			$q = new AMQPQueue($channel);
-			$q->setName($queueName);
+			$q->setName($queue['name']);
 			// flags should be on a per queue basis
-			$q->setFlags(AMQP_DURABLE);
+			$q->setFlags($queue['flag']);
 			$q->declare();	
 		}
+
 	}
 
 	public function sendMessage($message, $key)
