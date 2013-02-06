@@ -37,6 +37,8 @@ class Exchange
 		foreach ($this->_getQueues() as $queueName) {
 			$q = new AMQPQueue($channel);
 			$q->setName($queueName);
+			// flags should be on a per queue basis
+			$q->setFlags(AMQP_DURABLE);
 			$q->declare();	
 		}
 	}

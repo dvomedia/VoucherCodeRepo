@@ -82,6 +82,7 @@ abstract class Worker
         // Open Queue and bind to exchange
         $this->_queue = new AMQPQueue($this->_channel);
         $this->_queue->setName($this->_queueName);
+        $this->_queue->setFlags(AMQP_DURABLE);
         $this->_queue->declare();
         $this->_queue->bind($this->_exchangeName, $this->_key);
     }
@@ -91,18 +92,24 @@ abstract class Worker
         $this->_processLimit = $processLimit;
 
         // consume!
-        $this->_queue->consume(function($envelope, $queue){
-            return $this->consume($envelope, $queue);
-        }, AMQP_AUTOACK);
+        $self = $this;
+        $this->_queue->consume(function($envelope, $queue) use ($self){
+            return $self->consume($envelope, $queue);
+        });
     }
 
     final public function consume($envelope, $queue)
     {
         try {
             $this->doWork($envelope, $queue);
+            $queue->ack($envelope->getDeliveryTag());
             $this->_processed++;
-        } catch (Exception $ex) {
-            return false;
+        } catch (Worker_Exception_Retry $ex) {
+            $queue->nack($envelope->getDeliveryTag());
+        } catch (Worker_Exception_Fatal $ex) {
+            $queue->ack($envelope->getDeliveryTag());
+            // log the message so we don't forget about it
+            // @TODO
         }
 
         if ($this->_processed >= $this->_getProcessLimit()) {
